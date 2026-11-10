@@ -1,0 +1,232 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if product %}상품 수정{% else %}상품 등록{% endif %}{% endblock title %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='/css/zod_style.css') }}">
+{% endblock head %}
+
+{% block content %}
+<h1>{% if product %}상품 수정{% else %}상품 등록{% endif %}</h1>
+
+<form method="post" id="my_form" class="mt-4" style="max-width: 600px;" enctype="multipart/form-data">
+    {% if server_errors %}<div class="mb-3 text-danger">{{ server_errors }}</div>{% endif %}
+
+    <div class="mb-3">
+        <label for="name" class="form-label">상품명</label>
+        <input type="text" class="form-control" id="name" name="name" required autofocus>
+    </div>
+
+    <div class="mb-3">
+        <label for="slug" class="form-label">슬러그</label>
+        <input type="text" class="form-control" id="slug" name="slug" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="category_id" class="form-label">카테고리</label>
+        <select class="form-select" id="category_id" name="category_id" required>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}" 
+                {% if product and product.category_id == cat.id %}selected{% endif %}>{{ cat.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="price" class="form-label">판매가</label>
+            <input type="text" class="form-control" id="price" name="price" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="original_price" class="form-label">정가 (할인 전)</label>
+            <input type="text" class="form-control" id="original_price" name="original_price">
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="stock" class="form-label">재고</label>
+        <input type="text" class="form-control" id="stock" name="stock">
+    </div>
+
+    <div class="mb-3">
+        <label for="description" class="form-label">설명</label>
+        <textarea class="form-control" id="description" name="description" rows="5"></textarea>
+    </div>
+
+    <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="true">
+        <label class="form-check-label" for="is_active">판매 활성화</label>
+    </div>
+
+    <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="is_featured" name="is_featured" value="true">
+        <label class="form-check-label" for="is_featured">추천 상품</label>
+    </div>
+
+
+
+    <!-- 시작: 이미지 Upload 영역     -->
+    <!-- 멋진 드롭존 영역 -->
+    <div id="image_drop_zone" class="border border-2 border-dashed rounded-3 p-4 text-center bg-light position-relative mb-3 match-parent" style="max-width: 600px; cursor: pointer; border-style: dashed !important;">
+        <input type="file" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" id="image_input_ctrl" name="images" accept="image/*" multiple style="cursor: pointer;">
+        <div class="py-3">
+            <span class="fs-1 text-secondary d-block mb-2">+</span>
+            <p class="mb-1 fw-bold text-secondary">클릭하거나 이미지를 이곳에 떨어뜨리세요</p>
+            <p class="text-muted small mb-0">각 파일당 최대 5MB까지, 여러 장의 이미지를 동시에 선택할 수 있습니다.</p>
+        </div>
+    </div>
+
+    <!-- 여러 장의 프리뷰가 카드 그리드 형태로 나열될 공간 -->
+    <div id="image_preview_container" class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-2 mb-3" style="max-width: 600px;">
+        <!-- JavaScript를 통해 동적으로 프리뷰 아이템 생성 -->
+    </div>
+    <!-- 끝: 이미지 Upload 영역     -->
+
+
+
+    <button type="submit" id="btn_save" class="btn btn-primary">저장</button>
+    <a href="/admin/products" class="btn btn-secondary">취소</a>
+</form>
+
+{% if product %}
+<h3 class="mt-4">상품 이미지</h3>
+
+<div class="row mb-3">
+    {% for image in product.images %}
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <img src="{{ image.url }}" class="card-img-top" alt="">
+            <div class="card-body text-center">
+                <form method="post" id="form_delete_image" action="/admin/products/{{ product.id }}/images/{{ image.id }}/delete">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('삭제하시겠습니까?')">
+                        삭제
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% endblock content %}
+
+
+{% block scripts %}
+
+<!-- 1. 정의가 들어있는 유틸리티 파일을 먼저 로드 -->
+<script src="{{ url_for('static', path='/js/button_lock.js') }}"></script>
+
+<script type="module">
+    // 브라우저 전용 ESM CDN을 통해 z 객체를 안전하게 직접 가져옵니다.
+    import { z } from 'https://cdn.jsdelivr.net/npm/zod/+esm';
+    import zodUtils from '/static/js/zod_utils.js';    
+    import { zodShowButtonError } from '/static/js/zod_custom_validators.js';
+
+
+    const registerSchema = z.object({
+        name: z.string().min(3, { message: "최소 3 글자 이상" }).max(20, {message: "최대 20 글자까지 가능"}),
+        slug: z.string().min(3, { message: "슬러거(URL용)은 최소 3자 이상이어야 합니다." }),
+        description: z.string().min(10, { message: "설명은 최소 10자 이상이어야 합니다." }),
+        price: z.string().regex(/([0-9])$/, {message: "숫자만 입력 가능"}),
+        original_price: z.string()
+                        .regex(/^[0-9]+$/, { message: "숫자만 입력 가능" })
+                        .optional()
+                        .or(z.literal('')), // 빈 문자열도 허용
+        stock: z.string().regex(/([0-9])$/, {message: "숫자만 입력 가능"})
+                         .transform((val) => Number(val))
+                         .pipe(z.number().min(0, { message: "입력 가능한 최소값 0" }).max(200, { message: "입력 가능한 최대값 200" })
+                    ),
+    });
+
+    const form = document.getElementById('my_form');
+    const formElements = form.querySelectorAll("input, select, textarea");
+    const field_names = [];
+    formElements.forEach((element) => {
+        // 1. 기준이 될 key 추출 (id 또는 name)
+        if (!((element.type === 'file') || (element.type === 'checkbox') || (element.type === 'radio')))  {
+            const elementKey = element.id || element.name;
+            if (!elementKey) return;
+
+            field_names.push(elementKey)
+
+            // 2. Create the error div and set its attributes
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.id = `${elementKey}Error`;
+            errorDiv.textContent = ''; // Optional: add text
+
+            // 3. input field 바로 다음에 error div (예: slugError)를 추가한다.
+            element.after(errorDiv);
+        }
+    })
+
+    zodUtils.zodSetSchema(registerSchema);
+    zodUtils.zodSetFormAndFieldNames(form, field_names);
+
+    // 커스텀 검증은 Zod 스키마와 분리해서 등록합니다.
+    // key는 에러를 표시할 필드, dependsOn은 재검증을 유발하는 필드입니다.
+    zodUtils.zodSetCustomValidators({
+        original_price: {
+            dependsOn: ['price', 'original_price'],
+            validate: (data) => {
+                // 정가가 비어 있으면 선택 입력이므로 통과
+                if (!data.original_price?.trim()) return null;
+
+                // 숫자 형식 오류는 Zod가 담당하므로 여기서는 비교하지 않음
+                if (!/^\d+$/.test(data.price || '') || !/^\d+$/.test(data.original_price)) {
+                    return null;
+                }
+
+                return Number(data.original_price) > Number(data.price) ? null : '정가는 판매가보다 커야 합니다.';
+            }
+        }
+    });
+
+    zodUtils.zodAddEventListenerOnEachZodField();
+
+    // 폼 제출 이벤트: Zod와 등록된 모든 커스텀 검증을 함께 실행합니다.
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const btn_submit = e.submitter;
+        const locker = new ButtonLocker(btn_submit, "제출 중...");
+        locker.lock();
+
+        if (zodUtils.zodValidateAllFields()) {
+            form.submit();
+        } else {
+           zodShowButtonError(btn_submit); 
+        }
+        locker.unlock(); // Lock 해제
+    });
+</script>
+
+
+{# 시작: 화면이 표시되면서 동시에 서버에서 오는 값을 표시한다 #}
+<script type="module">
+    import { autoFillForm } from '/static/js/form_auto_fill.js';
+    import { initImagePreview } from '/static/js/image_preview.js';
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // 서버 데이터 가져오기
+        const product_data = {% if product %}{{ product|tojson }}{% else %}null{% endif %};
+
+        // 유틸리티 함수 호출 (대상 폼 선택자, 데이터, 예외 매핑 규칙 전달)
+        const name_to_skip = []
+        const my_form = document.getElementById('my_form');
+        autoFillForm(my_form, product_data, name_to_skip);
+    
+        initImagePreview({
+            imageInput: document.getElementById('image_input_ctrl'),
+            dropZone: document.getElementById('image_drop_zone'),
+            previewContainer: document.getElementById('image_preview_container'),
+            maxFileSize: 5 * 1024 * 1024
+        });
+
+    });
+</script>
+{# 끝: 화면이 표시되면서 동시에 서버에서 오는 값을 표시한다 #}
+
+{% endblock scripts %}

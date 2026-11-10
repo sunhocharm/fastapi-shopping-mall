@@ -1,0 +1,26 @@
+/* input field에서 error가 생기면 아래에 input field자체의 외관 변경한다. */
+/* input field class list에 error-input 추가  */
+input.error-input {
+    border-color: #dc3545;
+    background-color: #fdf2f2;
+}
+
+/* input field에서 error가 생기면 아래에 error message 보여주는 div box. */
+.error-message {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 4px;
+    min-height: 18px; /* 레이아웃 흔들림 방지 */
+}
+
+.button-error-message {
+    background-color: #ff4d4f;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+    pointer-events: none; /* 메시지가 마우스 클릭을 방해하지 않도록 설정 */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 9999; /* 다른 요소보다 항상 위에 보이도록 설정 */
+}

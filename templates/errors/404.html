@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% set msg = message if message else "페이지를 찾을 수 없습니다" %}
+{% set sub_msg = sub_message if sub_message else "요청하신 페이지가 존재하지 않거나 삭제되었습니다." %}
+{% set go_back_url = back_url if back_url else "/" %}
+
+{% block title %}{{ msg }}{% endblock title %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <h1 class="display-1 text-muted">404</h1>
+    <h2>{{ msg }}</h2>
+    <p class="text-muted">{{ sub_msg }}</p>
+    <a href="{{ go_back_url }}" class="btn btn-primary">돌아가기</a>
+</div>
+{% endblock content %}

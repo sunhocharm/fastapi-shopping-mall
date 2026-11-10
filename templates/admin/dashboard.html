@@ -1,0 +1,122 @@
+{% extends "admin/base.html" %}
+
+{% block title %}관리자 대시보드{% endblock title%}
+
+{% block content %}
+<h1 class="h3 mb-4">관리자 대시보드</h1>
+
+<!-- 통계 카드 -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h6 class="card-title">오늘 매출</h6>
+                <h3 class="mb-0">{% if stats %}{{ stats.revenue.today|format_price }}{% endif %}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h6 class="card-title">이번 달 매출</h6>
+                <h3 class="mb-0">{% if stats %}{{ stats.revenue.month|format_price }}{% endif %}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h6 class="card-title">처리 대기 주문</h6>
+                <h3 class="mb-0">{% if stats %}{{ stats.orders.pending }}건{% endif %}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h6 class="card-title">재고 부족 상품</h6>
+                <h3 class="mb-0">{% if stats %}{{ stats.products.low_stock }}개{% endif %}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 매출 차트 -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">일별 매출 추이</div>
+            <div class="card-body">
+                <canvas id="salesChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 요약 정보 -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">요약</div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>오늘 주문</span>
+                    <strong>{% if stats %}{{ stats.orders.today }}건{% endif %}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>이번 달 주문</span>
+                    <strong>{% if stats %}{{ stats.orders.month }}건{% endif %}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>전체 회원</span>
+                    <strong>{% if stats %}{{ stats.users.total }}명{% endif %}</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>오늘 가입</span>
+                    <strong>{% if stats %}{{ stats.users.today }}명{% endif %}</strong>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- 최근 주문 -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between">
+        <span>최근 주문</span>
+        <a href="/admin/orders" class="btn btn-sm btn-outline-primary">전체 보기</a>
+    </div>
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>주문번호</th>
+                <th>주문자</th>
+                <th>금액</th>
+                <th>상태</th>
+                <th>주문일시</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if recent_orders %}
+            {% for order in recent_orders %}
+            <tr onclick="location.href='/admin/orders/{{ order.id }}'" style="cursor:pointer">
+                <td>{{ order.order_number }}</td>
+                <td>{{ order.recipient }}</td>
+                <td>{{ order.final_price | format_price }}</td>
+                <td></td>
+                <td>{{ order.created_at | format_datetime }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center text-muted">주문이 없습니다</td>
+            </tr>
+            {% endfor %}
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+</script>
+{% endblock %}

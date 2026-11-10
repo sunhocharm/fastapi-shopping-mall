@@ -1,0 +1,128 @@
+<!-- /admin/categories/form.html -->
+
+{% extends "admin/base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='/css/zod_style.css') }}">
+{% endblock head %}
+
+{% block content %}
+<h1>{% if category %}카테고리 수정{% else %}카테고리 등록{% endif %}</h1>
+
+<form method="post" class="mt-4" style="max-width: 500px;" id="category_form">
+    {% if server_errors %}<div class="mb-3 text-danger">{{ server_errors }}</div>{% endif %}
+    <div class="mb-3">
+        <label for="name" class="form-label">이름</label>
+        <input type="text" class="form-control" id="name" name="name" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="slug" class="form-label">슬러그 (URL용)</label>
+        <input type="text" class="form-control" id="slug" name="slug" required>
+        <div class="form-text">예: electronics, clothing</div>
+    </div>
+
+    <div class="mb-3">
+        <label for="description" class="form-label">설명</label>
+        <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label for="sort_order" class="form-label">정렬 순서</label>
+        <input type="text" class="form-control" id="sort_order" name="sort_order">
+    </div>
+
+    <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="is_active" name="is_active">
+        <label class="form-check-label" for="is_active">활성화</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">저장</button>
+    <a href="/admin/categories" class="btn btn-secondary">취소</a>
+</form>
+{% endblock content %}
+
+
+{% block scripts %}
+
+<script type="module">
+    // 브라우저 전용 ESM CDN을 통해 z 객체를 안전하게 직접 가져옵니다.
+    import { z } from 'https://cdn.jsdelivr.net/npm/zod/+esm';
+    import zodUtils from '/static/js/zod_utils.js';
+    import { zodShowButtonError } from '/static/js/zod_custom_validators.js';
+
+
+    const category_schema = z.object({
+        name: z.string().min(3, { message: "최소 3 글자 이상" }).max(20, {message: "최대 20 글자까지 가능"}),
+        slug: z.string().min(3, { message: "슬러거(URL용)은 최소 3자 이상이어야 합니다." }),
+        description: z.string().min(10, { message: "설명은 최소 10자 이상이어야 합니다." }),
+        sort_order: z.string().regex(/([0-9])$/, {message: "숫자만 입력 가능"})
+                              .transform((val) => Number(val))
+                              .pipe(z.number()
+                                    .min(1, { message: "입력 가능한 최소값 1" })
+                                    .max(99, { message: "입력 가능한 최대값 99" })
+                              ),
+    });
+
+    const form = document.getElementById('category_form');
+    const formElements = form.querySelectorAll("input, select, textarea");
+    const field_names = [];
+    formElements.forEach((element) => {
+        // 1. 기준이 될 key 추출 (id 또는 name)
+        if (!((element.type === 'file') || (element.type === 'checkbox') || (element.type === 'radio')))  {
+            const elementKey = element.id || element.name;
+            if (!elementKey) return;
+
+            field_names.push(elementKey)
+
+            // 2. Create the error div and set its attributes
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.id = `${elementKey}Error`;
+            errorDiv.textContent = ''; // Optional: add text
+
+            // 3. Insert it immediately after the input
+            element.after(errorDiv);
+        }
+    })
+
+    zodUtils.zodSetSchema(category_schema);
+    zodUtils.zodSetFormAndFieldNames(form, field_names);
+
+    zodUtils.zodAddEventListenerOnEachZodField();
+
+    // 폼 제출 이벤트: Zod와 등록된 모든 커스텀 검증을 함께 실행합니다.
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const btn_submit = e.submitter;
+        const locker = new ButtonLocker(btn_submit, "제출 중...");
+        locker.lock();
+
+        if (zodUtils.zodValidateAllFields()) {
+            form.submit();
+        } else {
+            zodShowButtonError(btn_submit); 
+        }
+        locker.unlock(); // Lock 해제
+    });
+</script>
+
+
+{# 시작: 화면이 표시되면서 동시에 서버에서 오는 값을 표시한다 #}
+<script type="module">
+    import { autoFillForm } from '/static/js/form_auto_fill.js';
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // 서버 데이터 가져오기
+        const category_data = {% if category %}{{ category | tojson }}{% else %}null{% endif %};
+
+        // 유틸리티 함수 호출 (대상 폼 선택자, 데이터, 예외 매핑 규칙 전달)
+        const name_to_skip = []        
+        const my_form = document.getElementById('category_form');
+        autoFillForm(my_form, category_data, name_to_skip);
+    });
+</script>
+{# 끝: 화면이 표시되면서 동시에 서버에서 오는 값을 표시한다 #}
+
+{% endblock scripts %}

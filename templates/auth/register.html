@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}회원가입{% endblock title %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='/css/zod_style.css') }}">
+{% endblock head %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">회원가입</h2>
+
+                    <form method="post" id="my_form">
+                        {% if server_errors %}<div class="mb-3 text-danger">{{ server_errors }}</div>{% endif %}
+                        <div class="mb-3">
+                            <label for="email" class="form-label">이메일</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">비밀번호</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                            <div class="form-text">8자 이상, 영문과 숫자 포함</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password_confirm" class="form-label">비밀번호 확인</label>
+                            <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">이름</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">연락처 (선택)</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" placeholder="010-1234-5678">
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="agree" required>
+                            <label class="form-check-label" for="agree">
+                                <a href="/terms" target="_blank">이용약관</a> 및
+                                <a href="/privacy" target="_blank">개인정보처리방침</a>에 동의합니다
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 mb-3">가입하기</button>
+
+                        <div class="text-center">
+                            <span class="text-muted">이미 계정이 있으신가요?</span>
+                            <a href="/login">로그인</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+
+{% block scripts %}
+
+<!-- 1. 정의가 들어있는 유틸리티 파일을 먼저 로드 -->
+<script src="{{ url_for('static', path='/js/button_lock.js') }}"></script>
+
+<script type="module">
+    // 브라우저 전용 ESM CDN을 통해 z 객체를 안전하게 직접 가져옵니다.
+    import { z } from 'https://cdn.jsdelivr.net/npm/zod/+esm';
+    import zodUtils from '/static/js/zod_utils.js';
+    import {
+        zodPasswordValidator,
+        zodPhoneValidator,
+        zodShowButtonError,
+    } from '/static/js/zod_custom_validators.js';
+
+
+    const registerSchema = z.object({
+        email: z.string().email("이메일 형식 확인"),
+        password: z.string(),
+        name: z.string().min(3, { message: "최소 3글자" })
+                        .max(100, { message: "최대 100글자" }),
+        // 스키마는 에러 없이 부드럽게 통과하도록 기본형 문자열 옵셔널로 경량화합니다.
+        phone: z.string().optional().or(z.literal("")), 
+    });
+
+
+    const form = document.getElementById('my_form');
+    const formElements = form.querySelectorAll("input, select, textarea");
+    const field_names = [];
+    formElements.forEach((element) => {
+        // 1. 기준이 될 key 추출 (id 또는 name)
+        const type_to_skip = ["file", "checkbox", "radio"]
+        if (!(type_to_skip.includes(element.type))) {
+            const elementKey = element.id || element.name;
+            if (!elementKey) return;
+
+            field_names.push(elementKey)
+
+            // 2. Create the error div and set its attributes
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.id = `${elementKey}Error`;
+            errorDiv.textContent = ''; // Optional: add text
+
+            // 3. input field 바로 다음에 error div (예: slugError)를 추가한다.
+            element.after(errorDiv);
+        }
+    })
+
+    zodUtils.zodSetSchema(registerSchema);
+    zodUtils.zodSetFormAndFieldNames(form, field_names);
+
+    // 커스텀 검증은 Zod 스키마와 분리해서 등록합니다.
+    // key는 에러를 표시할 필드, dependsOn은 재검증을 유발하는 필드입니다.
+    zodUtils.zodSetCustomValidators({
+        password: zodPasswordValidator,
+        password_confirm: {
+            dependsOn: ["password", "password_confirm"],
+            validate: (data) => {
+                return data.password === data.password_confirm ? null : "비밀번호가 일치하지 않습니다.";
+            },
+        },
+        phone: zodPhoneValidator, 
+    });
+
+
+    zodUtils.zodAddEventListenerOnEachZodField();
+
+    // 폼 제출 이벤트: Zod와 등록된 모든 커스텀 검증을 함께 실행합니다.
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const btn_submit = e.submitter;
+        const locker = new ButtonLocker(btn_submit, "제출 중...");
+        locker.lock();
+
+        if (zodUtils.zodValidateAllFields()) {
+            form.submit();
+        } else {
+            zodShowButtonError(btn_submit); 
+        }
+        locker.unlock(); // Lock 해제
+    });
+</script>
+
+
+{# 시작: 화면이 표시되면서 동시에 서버에서 오는 값을 표시한다 #}
+<script type="module">
+    import { autoFillForm } from '/static/js/form_auto_fill.js';
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // 서버 데이터 가져오기
+        const server_data = {% if server_data %}{{ server_data | tojson }}{% else %}null{% endif %};
+
+        // 유틸리티 함수 호출 (대상 폼 선택자, 데이터, 예외 매핑 규칙 전달)
+        const name_to_skip = ["password", "password_confirm"]
+        const my_form = document.getElementById('my_form');
+        autoFillForm(my_form, server_data, name_to_skip);
+    });
+</script>
+{# 끝: 화면이 표시되면서 동시에 서버에서 오는 값을 표시한다 #}
+
+{% endblock scripts %}

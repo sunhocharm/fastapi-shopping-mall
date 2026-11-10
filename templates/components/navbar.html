@@ -1,0 +1,37 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/">FastAPI 쇼핑몰</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="/products">상품</a>
+            <!-- <a class="nav-link" href="/cart">장바구니</a> -->
+            <a class="nav-link position-relative" href="/cart">
+                장바구니
+                <span id="cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                      style="{% if not cart_total %}display:none{% endif %}"
+                >
+                    {% if cart_total %}{{ cart_total }}{% endif %}
+                </span>
+            </a>            
+            {% if current_user %}
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        {{ current_user.name }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/mypage">마이페이지</a></li>
+                        <li><a class="dropdown-item" href="/orders">주문내역</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form method="post" action="/logout">
+                                <button type="submit" class="dropdown-item">로그아웃</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            {% else %}
+                <a class="nav-link" href="/login">로그인</a>
+                <a class="nav-link" href="/register">회원가입</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>

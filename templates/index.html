@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- 히어로 배너 -->
+    <div class="bg-primary text-white rounded-3 p-5 mb-5">
+        <h1 class="display-5 fw-bold">FastAPI 쇼핑몰</h1>
+        <p class="lead">소설처럼 읽는 FastAPI로 만든 쇼핑몰입니다.</p>
+        <a href="/products" class="btn btn-light btn-lg">쇼핑 시작하기</a>
+    </div>
+
+    <!-- 추천 상품 -->
+    {% if featured_products %}
+    <h2 class="mb-4">추천 상품</h2>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4 mb-5">
+        {% for product in featured_products %}
+        <div class="col">
+            <div class="card h-100">
+                <a href="/products/{{ product.id }}">
+                    <img src="{{ product.main_image }}" class="card-img-top"
+                         alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                </a>
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="/products/{{ product.id }}" class="text-decoration-none text-dark">
+                            {{ product.name }}
+                        </a>
+                    </h5>
+                    <p class="card-text text-primary fw-bold">{{ product.price|format_price }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 카테고리 -->
+    {% if categories %}
+    <h2 class="mb-4">카테고리</h2>
+    <div class="row row-cols-2 row-cols-md-4 g-4">
+        {% for category in categories %}
+        <div class="col">
+            <a href="/products?category={{ category.id }}" class="text-decoration-none">
+                <div class="card text-center h-100">
+                    <div class="card-body">
+                        <h5 class="card-title text-dark">{{ category.name }}</h5>
+                        <p class="card-text text-muted small">{{ category.description or '상품 보기' }}</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock content %}
