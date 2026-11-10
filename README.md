@@ -1,3 +1,8 @@
+# git: project repository
+
+id: sunho.charm@gmail.com daonpark21c@A
+repository 이름: fastapi-shopping-mall > main
+
 https://www.youtube.com/watch?v=hj81HI2AsG4&t=203s
 FastAPI Full Course | Build Production-Ready Backend (Part 2)
 By Asadullah AI / part1: 10:26 part2: 09:12
