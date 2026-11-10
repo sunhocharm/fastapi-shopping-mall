@@ -5,12 +5,13 @@ from fastapi import Request
 from app.dependencies import _get_current_user
 from app.database import AsyncSessionLocal
 
-import redis.asyncio as aioredis
+from app.redis import get_redis
+# import redis.asyncio as aioredis
 from app.util.string_util import hash_token
 
 from loguru import logger
 
-redis_client = aioredis.from_url("redis://localhost:6379", decode_responses=True, protocol=2)
+redis_client = get_redis()
 
 async def add_auth_user_middleware(request: Request, call_next):
     request.state.user = None

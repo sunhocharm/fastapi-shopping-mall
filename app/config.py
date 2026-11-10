@@ -30,6 +30,16 @@ class Settings(BaseSettings):
     toss_client_key: SecretStr          # for frontend
     toss_secret_key: SecretStr          # for backend
 
+    redis_url: str
+    openai_api_key: str
+    # ANTHROPIC_API_KEY: str = ""
+    # GOOGLE_API_KEY: str = ""
+
+    # AI 설정
+    ai_default_provider: str = "openai"     # openai, anthropic, gemini
+    ai_default_model: str = "gpt-6-luna"    # "gpt-4o"
+
+
     upload_dir: str
     do_create_product_thumbnail: bool = True
     product_image_thumbnail_size: tuple[int, int] = (300, 300)

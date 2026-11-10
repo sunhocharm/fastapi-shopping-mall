@@ -14,6 +14,10 @@ from app.service.cart_service import CartService
 
 from app.util.auth_util import verify_access_token
 from app.util.string_util import str_decode
+
+import redis.asyncio as async_redis
+from app.redis import get_redis
+
 from app.custom_exceptions import CustomCredentialError, CustomPermissionError
 
 
@@ -29,6 +33,13 @@ def get_templates():
 
 
 TemplatesDep = Annotated[Jinja2Templates, Depends(get_templates)]
+
+
+async def get_redis_client() -> async_redis.Redis:
+    return await get_redis()    
+
+
+RedisDep = Annotated[async_redis.Redis, Depends(get_redis_client)]
 
 
 async def _get_current_user(

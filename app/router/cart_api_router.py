@@ -5,7 +5,9 @@ from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.responses import JSONResponse
 
 
+from app.dependencies import RedisDep
 from app.dependencies import CurrentUserOptional
+
 from app.model.user_model import User
 from app.dependency.product_dep import ProductServiceDep
 from app.dependency.cart_dep import CartServiceDep
@@ -16,12 +18,12 @@ from app.util.general_util import get_cart_identifier
 
 from app.custom_exceptions import EntityNotFoundError, CustomBadRequestError
 
-import redis.asyncio as async_redis
+# import redis.asyncio as async_redis
 
 
 router = APIRouter()    # prefix="/api/cart", tags=["cart-api"])
 # protocol=2 옵션을 추가하여 구형 레디스 서버(5.x)와의 호환성을 맞춰줍니다.
-redis_client = async_redis.from_url("redis://127.0.0.1:6379", decode_responses=True, protocol=2)
+# redis_client = async_redis.from_url("redis://127.0.0.1:6379", decode_responses=True, protocol=2)
 
 
 @router.post("/add")
@@ -30,7 +32,8 @@ async def api_add_to_cart(
     req_data: AddToCartRequest,
     product_service: ProductServiceDep,
     cart_service: CartServiceDep,
-    user: CurrentUserOptional
+    user: CurrentUserOptional,
+    redis_client: RedisDep
 ):
     """장바구니 담기"""
     logger.info("\n\n\t[[ api_add_to_cart ]]\n\n")

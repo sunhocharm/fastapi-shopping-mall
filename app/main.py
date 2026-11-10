@@ -37,6 +37,7 @@ from app.router.admin.product_router import router as admin_product_router
 from app.router.admin.order_router import router as admin_order_router
 # --- end: router ------------------------------------------------------------------ #
 
+from app.redis import get_redis, close_redis
 
 
 setup_logger()
@@ -45,8 +46,12 @@ setup_logger()
 @asynccontextmanager
 async def _lifespan(_app: FastAPI):
     logger.info("\n\n\t[[ Application Startup ]]\n\n")
+    await get_redis()
+    logger.info("\tredis 연결 OK")
     yield
     logger.info("\n\n\t[[ Application Shutdown ]]\n\n")
+    await close_redis()
+    logger.info("\tredis close OK")
     await engine.dispose()
 
 

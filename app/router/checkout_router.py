@@ -5,8 +5,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import RedirectResponse
 
-from app.dependencies import TemplatesDep
+from app.dependencies import RedisDep
 from app.dependencies import CurrentUser
+from app.dependencies import TemplatesDep
 
 from app.dependency.user_dep import UserServiceDep
 from app.dependency.cart_dep import CartServiceDep
@@ -19,11 +20,9 @@ from app.util.general_util import get_cart_identifier
 from app.util.cookie_util import delete_cart_session_token_in_cookie
 
 from app.service.cart_validation_error import CartValidationError
-import redis.asyncio as async_redis
+
 
 router = APIRouter() # prefix="/checkout", tags=["checkout"]
-
-redis_client = async_redis.from_url("redis://127.0.0.1:6379", decode_responses=True, protocol=2)
 
 
 @router.get("")
@@ -85,7 +84,8 @@ async def create_order(
     cart_service: CartServiceDep,
     order_service: OrderServiceDep,
     current_user: CurrentUser,
-    templates: TemplatesDep
+    templates: TemplatesDep, 
+    redis_client: RedisDep
 ):
     """주문 생성"""
     logger.info("\n\n\t[[ create_order ]]\n\n")
